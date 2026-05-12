@@ -32,6 +32,10 @@ bun run test -- path/to.spec.ts   # Single test file
 - **Testing**: Jest 30 + ts-jest 29 — unit tests colocated as `*.spec.ts`, e2e tests in `test/`
 - **TypeScript**: ES2023 target, nodenext module resolution, strict null checks enabled, `noImplicitAny` off in TS (but Biome catches explicit `any`)
 
+## Code Exploration
+
+Always use the `lsp-code-analysis` skill (LSP tool) for reading, searching, and analyzing code — instead of grep, find, or bash text processing. This includes symbol lookups, finding references, navigating to definitions, and understanding type hierarchies.
+
 ## Architecture
 
 Standard NestJS modular structure. Entry point: `src/main.ts` → `AppModule`.
