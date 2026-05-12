@@ -4,7 +4,7 @@ services:
     container_name: cms-postgres
     restart: unless-stopped
     ports:
-      - '5432:5432'
+      - '15432:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -17,7 +17,7 @@ services:
     container_name: cms-redis
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      - '16379:6379'
     volumes:
       - redis_data:/data
 
