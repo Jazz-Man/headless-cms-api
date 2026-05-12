@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:alpine
     container_name: cms-postgres
     restart: unless-stopped
     ports:
@@ -10,10 +10,10 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: headless_cms
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: cms-redis
     restart: unless-stopped
     ports:
