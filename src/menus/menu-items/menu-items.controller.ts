@@ -23,7 +23,7 @@ export class MenuItemsController {
   @Post()
   async create(@Param('slug') slug: string, @Body() dto: CreateMenuItemDto) {
     const menu = await this.resolveMenu(slug)
-    return this.menuItemsService.create(menu.id, dto)
+    return this.menuItemsService.create(slug, menu.id, dto)
   }
 
   @Roles(UserRole.ADMIN)

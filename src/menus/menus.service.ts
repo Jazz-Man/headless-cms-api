@@ -1,5 +1,7 @@
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager'
 import {
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
@@ -10,11 +12,14 @@ import { MenuItem } from '../entities/menu-item.entity'
 import { CreateMenuDto } from './dto/create-menu.dto'
 import { UpdateMenuDto } from './dto/update-menu.dto'
 
+const LIST_CACHE_KEY = 'menus:list'
+
 @Injectable()
 export class MenusService {
   constructor(
     @InjectRepository(Menu)
     private readonly repo: Repository<Menu>,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   async create(dto: CreateMenuDto): Promise<Menu> {
@@ -24,22 +29,40 @@ export class MenusService {
     }
 
     const menu = this.repo.create(dto)
-    return this.repo.save(menu)
+    const saved = await this.repo.save(menu)
+    await this.cacheManager.del(LIST_CACHE_KEY)
+    return saved
   }
 
   async findAll(): Promise<Menu[]> {
-    return await this.repo.find({ order: { createdAt: 'DESC' } })
+    const cached = await this.cacheManager.get<Menu[]>(LIST_CACHE_KEY)
+    if (cached) return cached
+
+    const result = await this.repo.find({ order: { createdAt: 'DESC' } })
+    await this.cacheManager.set(LIST_CACHE_KEY, result)
+    return result
   }
 
   async findOne(slug: string): Promise<Menu> {
+    const cacheKey = `menus:slug:${slug}`
+    const cached = await this.cacheManager.get<Menu>(cacheKey)
+    if (cached) return cached
+
     const menu = await this.repo.findOne({ where: { slug } })
     if (!menu) {
       throw new NotFoundException(`Menu "${slug}" not found`)
     }
+    await this.cacheManager.set(cacheKey, menu)
     return menu
   }
 
   async getMenuTree(slug: string): Promise<Menu & { items: MenuItem[] }> {
+    const cacheKey = `menus:tree:${slug}`
+    const cached = await this.cacheManager.get<Menu & { items: MenuItem[] }>(
+      cacheKey,
+    )
+    if (cached) return cached
+
     const menu = await this.findOne(slug)
 
     const items = await this.repo.manager.getRepository(MenuItem).find({
@@ -48,18 +71,27 @@ export class MenusService {
     })
 
     const tree = this.buildTree(items)
-    return { ...menu, items: tree }
+    const result = { ...menu, items: tree }
+    await this.cacheManager.set(cacheKey, result)
+    return result
   }
 
   async update(slug: string, dto: UpdateMenuDto): Promise<Menu> {
     const menu = await this.findOne(slug)
     Object.assign(menu, dto)
-    return this.repo.save(menu)
+    const saved = await this.repo.save(menu)
+    await this.cacheManager.del(`menus:slug:${slug}`)
+    await this.cacheManager.del(`menus:tree:${slug}`)
+    await this.cacheManager.del(LIST_CACHE_KEY)
+    return saved
   }
 
   async remove(slug: string): Promise<void> {
     const menu = await this.findOne(slug)
     await this.repo.remove(menu)
+    await this.cacheManager.del(`menus:slug:${slug}`)
+    await this.cacheManager.del(`menus:tree:${slug}`)
+    await this.cacheManager.del(LIST_CACHE_KEY)
   }
 
   private buildTree(items: MenuItem[]): MenuItem[] {

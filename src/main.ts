@@ -2,14 +2,23 @@ import { Logger, ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import cookieParser from 'cookie-parser'
 import * as express from 'express'
+import helmet from 'helmet'
 import * as path from 'path'
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor'
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap')
-  const app = await NestFactory.create(AppModule)
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  })
+  app.useLogger(app.get(Logger))
+
+  app.use(helmet())
+
+  app.enableCors({
+    credentials: true,
+    origin: process.env.CORS_ORIGINS?.split(',') || '*',
+  })
 
   app.setGlobalPrefix('api')
 
@@ -24,10 +33,10 @@ async function bootstrap() {
     }),
   )
   app.useGlobalFilters(new HttpExceptionFilter())
-  app.useGlobalInterceptors(new LoggingInterceptor())
+
+  app.enableShutdownHooks()
 
   const port = process.env.PORT ?? 3000
   await app.listen(port)
-  logger.log(`Application running on port ${port}`)
 }
 bootstrap()

@@ -1,5 +1,7 @@
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager'
 import {
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
@@ -25,6 +27,7 @@ export class ContentsService {
     private readonly contentTermRepo: Repository<ContentTerm>,
     private readonly seoService: SeoService,
     private readonly contentTypesService: ContentTypesService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   async create(authorId: string, dto: CreateContentDto): Promise<Content> {
@@ -50,6 +53,8 @@ export class ContentsService {
       await this.seoService.upsert(SeoEntityType.CONTENT, saved.id, dto.seo)
     }
 
+    await this.invalidateContentListCache(dto.typeSlug)
+    await this.invalidateContentListCache()
     return this.findOneById(saved.id)
   }
 
@@ -62,6 +67,11 @@ export class ContentsService {
       search,
       sort = '-publishedAt',
     } = query
+
+    const version = await this.getListCacheVersion(type)
+    const cacheKey = `contents:list:${type ?? 'all'}:v${version}:${page}:${limit}:${status ?? 'published'}:${sort}`
+    const cached = await this.cacheManager.get(cacheKey)
+    if (cached) return cached
 
     const qb = this.contentRepo
       .createQueryBuilder('c')
@@ -98,10 +108,16 @@ export class ContentsService {
     qb.skip(skip).take(limit)
 
     const [items, total] = await qb.getManyAndCount()
-    return { items, limit, page, total }
+    const result = { items, limit, page, total }
+    await this.cacheManager.set(cacheKey, result)
+    return result
   }
 
   async findOneBySlug(slug: string): Promise<Content> {
+    const cacheKey = `contents:slug:${slug}`
+    const cached = await this.cacheManager.get(cacheKey)
+    if (cached) return cached as Content
+
     const content = await this.contentRepo.findOne({
       relations: ['contentType', 'author'],
       where: { slug },
@@ -115,7 +131,9 @@ export class ContentsService {
       this.getTerms(content.id),
     ])
 
-    return Object.assign(content, { seo, terms })
+    const result = Object.assign(content, { seo, terms })
+    await this.cacheManager.set(cacheKey, result)
+    return result
   }
 
   async update(
@@ -155,6 +173,11 @@ export class ContentsService {
       await this.seoService.upsert(SeoEntityType.CONTENT, id, dto.seo)
     }
 
+    await this.cacheManager.del(`contents:slug:${content.slug}`)
+    if (dto.slug && dto.slug !== content.slug) {
+      await this.cacheManager.del(`contents:slug:${dto.slug}`)
+    }
+    await this.invalidateContentListCache()
     return this.findOneById(id)
   }
 
@@ -164,7 +187,10 @@ export class ContentsService {
       throw new NotFoundException(`Content with id "${id}" not found`)
     }
     content.status = ContentStatus.ARCHIVED
-    return this.contentRepo.save(content)
+    const saved = await this.contentRepo.save(content)
+    await this.cacheManager.del(`contents:slug:${content.slug}`)
+    await this.invalidateContentListCache()
+    return saved
   }
 
   private async findOneById(id: string): Promise<Content> {
@@ -182,6 +208,19 @@ export class ContentsService {
     ])
 
     return Object.assign(content, { seo, terms })
+  }
+
+  private async invalidateContentListCache(typeSlug?: string): Promise<void> {
+    const key = `contents:list:version:${typeSlug ?? 'all'}`
+    const version = await this.cacheManager.get<number>(key)
+    const next = (version ?? 0) + 1
+    await this.cacheManager.set(key, next, 86400000)
+  }
+
+  private async getListCacheVersion(typeSlug?: string): Promise<number> {
+    const key = `contents:list:version:${typeSlug ?? 'all'}`
+    const version = await this.cacheManager.get<number>(key)
+    return version ?? 0
   }
 
   private async syncTerms(contentId: string, termIds: string[]): Promise<void> {

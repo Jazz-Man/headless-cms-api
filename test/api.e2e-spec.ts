@@ -1,3 +1,4 @@
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager'
 import { INestApplication, Logger, ValidationPipe } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import * as bcrypt from 'bcrypt'
@@ -60,6 +61,14 @@ describe('API (e2e)', () => {
     // Drop and re-create all tables for a clean state
     await dataSource.dropDatabase()
     await dataSource.synchronize()
+
+    // Flush stale cache entries from previous test runs
+    const cache = app.get<Cache>(CACHE_MANAGER)
+    try {
+      await cache.clear()
+    } catch {
+      // Clear may not be supported by all stores
+    }
 
     userRepo = dataSource.getRepository(User)
     ctRepo = dataSource.getRepository(ContentType)
