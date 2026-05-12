@@ -37,7 +37,7 @@ export class MenuItem {
   @JoinColumn({ name: 'parent_id' })
   parent: MenuItem
 
-  @Column({ type: 'enum', enum: MenuItemType })
+  @Column({ enum: MenuItemType, type: 'enum' })
   type: MenuItemType
 
   @Column({ name: 'target_id', nullable: true })
@@ -52,10 +52,10 @@ export class MenuItem {
   @Column({ name: 'css_class', nullable: true })
   cssClass: string
 
-  @Column({ name: 'target_attr', default: '_self' })
+  @Column({ default: '_self', name: 'target_attr' })
   targetAttr: string
 
-  @Column({ name: 'sort_order', default: 0 })
+  @Column({ default: 0, name: 'sort_order' })
   sortOrder: number
 
   @CreateDateColumn({ name: 'created_at' })

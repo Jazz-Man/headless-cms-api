@@ -23,10 +23,10 @@ export class Taxonomy {
   @Column()
   name: string
 
-  @Column({ type: 'enum', enum: TaxonomyType })
+  @Column({ enum: TaxonomyType, type: 'enum' })
   type: TaxonomyType
 
-  @Column({ name: 'is_builtin', default: false })
+  @Column({ default: false, name: 'is_builtin' })
   isBuiltin: boolean
 
   @CreateDateColumn({ name: 'created_at' })

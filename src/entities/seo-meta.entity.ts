@@ -18,37 +18,37 @@ export class SeoMeta {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column({ name: 'entity_type', type: 'enum', enum: SeoEntityType })
+  @Column({ enum: SeoEntityType, name: 'entity_type', type: 'enum' })
   entityType: SeoEntityType
 
   @Column({ name: 'entity_id' })
   entityId: string
 
-  @Column({ name: 'meta_title', length: '60', nullable: true })
+  @Column({ length: '60', name: 'meta_title', nullable: true })
   metaTitle: string
 
-  @Column({ name: 'meta_description', length: '160', nullable: true })
+  @Column({ length: '160', name: 'meta_description', nullable: true })
   metaDescription: string
 
-  @Column({ name: 'og_title', length: '100', nullable: true })
+  @Column({ length: '100', name: 'og_title', nullable: true })
   ogTitle: string
 
-  @Column({ name: 'og_description', length: '200', nullable: true })
+  @Column({ length: '200', name: 'og_description', nullable: true })
   ogDescription: string
 
-  @Column({ name: 'og_image', length: '500', nullable: true })
+  @Column({ length: '500', name: 'og_image', nullable: true })
   ogImage: string
 
-  @Column({ name: 'canonical_url', length: '500', nullable: true })
+  @Column({ length: '500', name: 'canonical_url', nullable: true })
   canonicalUrl: string
 
-  @Column({ name: 'robots_index', default: true })
+  @Column({ default: true, name: 'robots_index' })
   robotsIndex: boolean
 
-  @Column({ name: 'robots_follow', default: true })
+  @Column({ default: true, name: 'robots_follow' })
   robotsFollow: boolean
 
-  @Column({ name: 'focus_keyword', length: '200', nullable: true })
+  @Column({ length: '200', name: 'focus_keyword', nullable: true })
   focusKeyword: string
 
   @CreateDateColumn({ name: 'created_at' })

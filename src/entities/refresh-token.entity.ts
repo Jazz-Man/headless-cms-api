@@ -26,7 +26,7 @@ export class RefreshToken {
   @Column({ name: 'expires_at', type: 'timestamptz' })
   expiresAt: Date
 
-  @Column({ name: 'is_revoked', default: false })
+  @Column({ default: false, name: 'is_revoked' })
   isRevoked: boolean
 
   @CreateDateColumn({ name: 'created_at' })

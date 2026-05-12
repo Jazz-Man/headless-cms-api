@@ -33,7 +33,7 @@ export class Term {
   @Column()
   slug: string
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ nullable: true, type: 'text' })
   description: string
 
   @Column({ name: 'parent_id', nullable: true })
@@ -48,7 +48,7 @@ export class Term {
   @TreeChildren()
   children: Term[]
 
-  @Column({ name: 'sort_order', default: 0 })
+  @Column({ default: 0, name: 'sort_order' })
   sortOrder: number
 
   @CreateDateColumn({ name: 'created_at' })

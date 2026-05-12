@@ -1,4 +1,4 @@
-import { PipeTransform, Injectable } from '@nestjs/common'
+import { Injectable, PipeTransform } from '@nestjs/common'
 
 @Injectable()
 export class SlugPipe implements PipeTransform<string, string> {

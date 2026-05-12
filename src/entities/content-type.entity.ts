@@ -18,10 +18,10 @@ export class ContentType {
   @Column()
   name: string
 
-  @Column({ name: 'schema_jsonb', type: 'jsonb', default: '{}' })
+  @Column({ default: '{}', name: 'schema_jsonb', type: 'jsonb' })
   schemaJsonb: Record<string, unknown>
 
-  @Column({ name: 'is_builtin', default: false })
+  @Column({ default: false, name: 'is_builtin' })
   isBuiltin: boolean
 
   @CreateDateColumn({ name: 'created_at' })

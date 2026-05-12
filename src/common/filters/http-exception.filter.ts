@@ -1,7 +1,7 @@
 import {
-  ExceptionFilter,
-  Catch,
   ArgumentsHost,
+  Catch,
+  ExceptionFilter,
   HttpException,
   HttpStatus,
 } from '@nestjs/common'
@@ -31,6 +31,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     }
 
-    response.status(status).json({ statusCode: status, message, errors })
+    response.status(status).json({ errors, message, statusCode: status })
   }
 }

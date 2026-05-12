@@ -26,10 +26,10 @@ export class User {
   @Column({ name: 'display_name', nullable: true })
   displayName: string
 
-  @Column({ type: 'enum', enum: UserRole, default: UserRole.VIEWER })
+  @Column({ default: UserRole.VIEWER, enum: UserRole, type: 'enum' })
   role: UserRole
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ default: true, name: 'is_active' })
   isActive: boolean
 
   @CreateDateColumn({ name: 'created_at' })

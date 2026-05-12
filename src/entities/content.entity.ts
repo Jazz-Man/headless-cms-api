@@ -37,16 +37,16 @@ export class Content {
   @Column({ unique: false })
   slug: string
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ nullable: true, type: 'text' })
   excerpt: string
 
-  @Column({ name: 'body_jsonb', type: 'jsonb', nullable: true })
+  @Column({ name: 'body_jsonb', nullable: true, type: 'jsonb' })
   bodyJsonb: Record<string, unknown>
 
   @Column({
-    type: 'enum',
-    enum: ContentStatus,
     default: ContentStatus.DRAFT,
+    enum: ContentStatus,
+    type: 'enum',
   })
   status: ContentStatus
 
@@ -57,7 +57,7 @@ export class Content {
   @JoinColumn({ name: 'author_id' })
   author: User
 
-  @Column({ name: 'published_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'published_at', nullable: true, type: 'timestamptz' })
   publishedAt: Date
 
   @CreateDateColumn({ name: 'created_at' })
