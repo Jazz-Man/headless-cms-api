@@ -1,13 +1,10 @@
 import * as bcrypt from 'bcrypt'
 import { DataSource } from 'typeorm'
-import { ContentType } from './entities/content-type.entity'
-import { Taxonomy, TaxonomyType } from './entities/taxonomy.entity'
-import { User, UserRole } from './entities/user.entity'
 
 async function seed() {
   const dataSource = new DataSource({
     database: process.env.DB_DATABASE ?? 'headless_cms',
-    entities: [User, ContentType, Taxonomy],
+    entities: ['dist/entities/*.entity.js'],
     host: process.env.DB_HOST ?? 'localhost',
     password: process.env.DB_PASSWORD ?? 'postgres',
     port: parseInt(process.env.DB_PORT ?? '5432', 10),
@@ -19,21 +16,23 @@ async function seed() {
   await dataSource.initialize()
   console.log('Seeding database...')
 
-  const userRepo = dataSource.getRepository(User)
-  const ctRepo = dataSource.getRepository(ContentType)
-  const taxRepo = dataSource.getRepository(Taxonomy)
+  const userRepo = dataSource.getRepository('users')
+  const ctRepo = dataSource.getRepository('content_types')
+  const taxRepo = dataSource.getRepository('taxonomies')
 
   // Admin user
   const adminExists = await userRepo.findOne({
     where: { email: 'admin@example.com' },
   })
   if (!adminExists) {
-    await userRepo.save({
-      displayName: 'Admin',
-      email: 'admin@example.com',
-      passwordHash: await bcrypt.hash('password123', 10),
-      role: UserRole.ADMIN,
-    })
+    await userRepo.save(
+      userRepo.create({
+        displayName: 'Admin',
+        email: 'admin@example.com',
+        passwordHash: await bcrypt.hash('password123', 10),
+        role: 'admin',
+      }),
+    )
   }
 
   // Editor user
@@ -41,54 +40,64 @@ async function seed() {
     where: { email: 'editor@example.com' },
   })
   if (!editorExists) {
-    await userRepo.save({
-      displayName: 'Editor',
-      email: 'editor@example.com',
-      passwordHash: await bcrypt.hash('password123', 10),
-      role: UserRole.EDITOR,
-    })
+    await userRepo.save(
+      userRepo.create({
+        displayName: 'Editor',
+        email: 'editor@example.com',
+        passwordHash: await bcrypt.hash('password123', 10),
+        role: 'editor',
+      }),
+    )
   }
 
   // Built-in content types
   const postType = await ctRepo.findOne({ where: { slug: 'post' } })
   if (!postType) {
-    await ctRepo.save({
-      isBuiltin: true,
-      name: 'Post',
-      schemaJsonb: {},
-      slug: 'post',
-    })
+    await ctRepo.save(
+      ctRepo.create({
+        isBuiltin: true,
+        name: 'Post',
+        schemaJsonb: {},
+        slug: 'post',
+      }),
+    )
   }
 
   const pageType = await ctRepo.findOne({ where: { slug: 'page' } })
   if (!pageType) {
-    await ctRepo.save({
-      isBuiltin: true,
-      name: 'Page',
-      schemaJsonb: {},
-      slug: 'page',
-    })
+    await ctRepo.save(
+      ctRepo.create({
+        isBuiltin: true,
+        name: 'Page',
+        schemaJsonb: {},
+        slug: 'page',
+      }),
+    )
   }
 
   // Built-in taxonomies
   const catTax = await taxRepo.findOne({ where: { slug: 'category' } })
   if (!catTax) {
-    await taxRepo.save({
-      isBuiltin: true,
-      name: 'Categories',
-      slug: 'category',
-      type: TaxonomyType.HIERARCHICAL,
-    })
+    await taxRepo.save(
+      taxRepo.create({
+        isBuiltin: true,
+        name: 'Categories',
+        slug: 'category',
+        type: 'hierarchical',
+      }),
+    )
   }
 
   const tagTax = await taxRepo.findOne({ where: { slug: 'post_tag' } })
   if (!tagTax) {
-    await taxRepo.save({
-      isBuiltin: true,
-      name: 'Tags',
-      slug: 'post_tag',
-      type: TaxonomyType.FLAT,
-    })
+    await taxRepo.save(
+      taxRepo.create({
+        isBuiltin: true,
+        name: 'Tags',
+        slug: 'post_tag',
+        type: 'flat',
+      }),
+    )
   }
 
   await dataSource.destroy()

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { Media } from '../entities/media.entity'
 import { MediaController } from './media.controller'
@@ -9,7 +10,7 @@ import { STORAGE_PROVIDER } from './storage/storage.interface'
 @Module({
   controllers: [MediaController],
   exports: [MediaService],
-  imports: [TypeOrmModule.forFeature([Media])],
+  imports: [ConfigModule, TypeOrmModule.forFeature([Media])],
   providers: [
     MediaService,
     { provide: STORAGE_PROVIDER, useClass: LocalStorageProvider },

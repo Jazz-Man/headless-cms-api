@@ -49,12 +49,7 @@ export class AuthService {
   }
 
   async refresh(token: string) {
-    const tokenHash = await this.hashToken(token)
-
-    const refreshToken = await this.refreshTokenRepo.findOne({
-      relations: ['user'],
-      where: { tokenHash },
-    })
+    const refreshToken = await this.findTokenByPlain(token)
 
     if (!refreshToken) {
       throw new UnauthorizedException('Invalid refresh token')
@@ -79,11 +74,7 @@ export class AuthService {
   }
 
   async logout(userId: string, token: string) {
-    const tokenHash = await this.hashToken(token)
-
-    const refreshToken = await this.refreshTokenRepo.findOne({
-      where: { tokenHash, userId },
-    })
+    const refreshToken = await this.findTokenByPlain(token, userId)
 
     if (refreshToken) {
       refreshToken.isRevoked = true
@@ -139,6 +130,33 @@ export class AuthService {
 
   private async hashToken(token: string): Promise<string> {
     return await bcrypt.hash(token, 10)
+  }
+
+  private async findTokenByPlain(
+    plainToken: string,
+    userId?: string,
+  ): Promise<RefreshToken | null> {
+    const payload = this.jwtService.decode(plainToken) as {
+      sub?: string
+    } | null
+    if (!payload?.sub) {
+      return null
+    }
+
+    const queryUserId = userId ?? payload.sub
+
+    const tokens = await this.refreshTokenRepo.find({
+      relations: ['user'],
+      where: { userId: queryUserId },
+    })
+
+    for (const t of tokens) {
+      if (await bcrypt.compare(plainToken, t.tokenHash)) {
+        return t
+      }
+    }
+
+    return null
   }
 
   private parseExpiry(expiresIn: string): Date {

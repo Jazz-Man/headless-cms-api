@@ -1,9 +1,13 @@
 {
   "moduleFileExtensions": ["js", "json", "ts"],
+  "moduleNameMapper": {
+    "^uuid$": "<rootDir>/../node_modules/uuid/dist/index.js"
+  },
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
-  }
+  },
+  "transformIgnorePatterns": ["node_modules/(?!(uuid)/)"]
 }
