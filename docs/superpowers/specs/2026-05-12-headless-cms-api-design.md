@@ -59,7 +59,7 @@ Separate table instead of JSONB for efficient querying and canonical URL uniquen
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID (PK) | |
-| entity_type | ENUM('content','category','taxonomy') | Polymorphic relation |
+| entity_type | ENUM('content','term') | Polymorphic relation |
 | entity_id | UUID | ID of content or term |
 | meta_title | VARCHAR(60) | |
 | meta_description | VARCHAR(160) | |
@@ -74,6 +74,8 @@ Separate table instead of JSONB for efficient querying and canonical URL uniquen
 | updated_at | TIMESTAMP | |
 
 UNIQUE(entity_type, entity_id) — one SEO record per entity.
+
+Note: Polymorphic relation (`entity_type` + `entity_id`) cannot use a DB-level FK constraint. Referential integrity is enforced at the application layer — SeoService deletes SEO records when the parent entity is deleted.
 
 ### `taxonomies`
 
@@ -291,12 +293,13 @@ src/
 |--------|------|-------------|------|
 | GET | `/contents` | Published list (paginated, filtered) | Public |
 | GET | `/contents/:slug` | Content details + SEO + terms | Public |
-| GET | `/contents/drafts` | Current user's drafts | JWT |
 | POST | `/contents` | Create draft | JWT (editor/admin) |
 | PATCH | `/contents/:id` | Update / publish | JWT (editor/admin) |
 | DELETE | `/contents/:id` | Archive (soft delete) | JWT (admin) |
 
-Query params for `GET /contents`: `?page=1&limit=20&type=post&status=published&taxonomy=category:tech&sort=-published_at&search=keyword`
+Query params for `GET /contents`: `?page=1&limit=20&type=post&status=draft&taxonomy=category:tech&sort=-published_at&search=keyword`
+
+Drafts are accessed via `GET /contents?status=draft` (requires JWT). No separate `/contents/drafts` route to avoid collision with `:slug` parameter.
 
 ### Taxonomies
 
@@ -360,7 +363,7 @@ SEO data is included in `PATCH /contents/:id` and `PATCH /taxonomies/:taxonomySl
 
 ### JWT flow
 
-**Login:** `POST /auth/login` → bcrypt compare → generate access token (15 min) + refresh token (7 days). Access in response body, refresh in `httpOnly` cookie with `SameSite=Strict`.
+**Login:** `POST /auth/login` → bcrypt compare → generate access token (15 min) + refresh token (7 days). Access in response body, refresh in `httpOnly` cookie with `SameSite=Lax`. `Lax` (not `Strict`) allows the frontend on a separate domain to receive the cookie on top-level navigations, which is necessary for a headless API serving external frontends.
 
 **Refresh:** `POST /auth/refresh` → read refresh from cookie → verify hash in DB, not revoked, not expired → generate new pair, old refresh marked `is_revoked=true`. Token rotation — each refresh invalidates the previous one.
 
