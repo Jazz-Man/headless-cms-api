@@ -10,14 +10,15 @@ Headless CMS API built with NestJS 11 + TypeScript. Early-stage project — curr
 
 ```bash
 bun install                  # Install dependencies
-bun run start:dev            # Dev server with watch (port 3000 by default)
+bun run start:dev            # Dev server with watch (port 3000, override with PORT env var)
+bun run start:debug          # Dev server with debug + watch
 bun run build                # Compile to dist/
 bun run start:prod           # Run compiled output
 
 bun run lint                 # Biome check with --unsafe --fix
-bunx biome check --fix       # Biome check without --unsafe
+bunx biome check --fix       # Biome check without --unsafe (safer, fewer auto-fixes)
 
-bun run test                 # Unit tests (Jest via ts-jest)
+bun run test                 # Unit tests (Jest 30 via ts-jest)
 bun run test:watch           # Tests in watch mode
 bun run test:cov             # Coverage report
 bun run test:e2e             # E2E tests (test/*.e2e-spec.ts)
@@ -27,9 +28,9 @@ bun run test -- path/to.spec.ts   # Single test file
 ## Tooling
 
 - **Runtime/Package Manager**: Bun (lockfile: `bun.lock`)
-- **Linting/Formatting**: Biome v2 (`biome.json`) — single quotes, no semicolons, 2-space indent, 80 char line width
+- **Linting/Formatting**: Biome v2 (`biome.json`) — single quotes, no semicolons, 2-space indent, 80 char line width. Enforces `noExplicitAny` at error level — avoid `any` types. `package.json` is excluded from Biome.
 - **Testing**: Jest 30 + ts-jest 29 — unit tests colocated as `*.spec.ts`, e2e tests in `test/`
-- **TypeScript**: ES2023 target, nodenext module resolution, strict null checks enabled, `noImplicitAny` off
+- **TypeScript**: ES2023 target, nodenext module resolution, strict null checks enabled, `noImplicitAny` off in TS (but Biome catches explicit `any`)
 
 ## Architecture
 
