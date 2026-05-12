@@ -1,4 +1,4 @@
-# Auto Parts E-Commerce API
+# Headless CMS API
 
 ## Project setup
 
