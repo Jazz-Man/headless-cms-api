@@ -9,7 +9,8 @@ import { Content, ContentStatus } from '../src/entities/content.entity'
 import { ContentType } from '../src/entities/content-type.entity'
 import { Taxonomy, TaxonomyType } from '../src/entities/taxonomy.entity'
 import { Term } from '../src/entities/term.entity'
-import { User, UserRole } from '../src/entities/user.entity'
+import { User } from '../src/entities/user.entity'
+import { seedPermissions } from './helpers/seed-permissions'
 
 process.env.DB_DATABASE = 'headless_cms_test'
 
@@ -73,13 +74,15 @@ describe('Sitemap (e2e)', () => {
   })
 
   async function seedDatabase() {
+    await seedPermissions(dataSource)
+
     await userRepo.save(
       userRepo.create({
         displayName: 'Sitemap Admin',
         email: adminEmail,
         isActive: true,
         passwordHash: await bcrypt.hash(password, 10),
-        role: UserRole.ADMIN,
+        role: 'admin',
       }),
     )
 

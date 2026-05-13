@@ -9,9 +9,8 @@ import {
   Query,
   Req,
 } from '@nestjs/common'
+import { Permissions } from '../common/decorators/permissions.decorator'
 import { Public } from '../common/decorators/public.decorator'
-import { Roles } from '../common/decorators/roles.decorator'
-import { UserRole } from '../entities/user.entity'
 import { ContentsService } from './contents.service'
 import { CreateContentDto } from './dto/create-content.dto'
 import { QueryContentsDto } from './dto/query-contents.dto'
@@ -33,14 +32,14 @@ export class ContentsController {
     return this.service.findOneBySlug(slug)
   }
 
-  @Roles(UserRole.EDITOR, UserRole.ADMIN)
+  @Permissions('content:create')
   @Post()
   // biome-ignore lint/suspicious/noExplicitAny: req.user injected by guard, TS1272 requires no type annotation
   create(@Req() req: any, @Body() dto: CreateContentDto) {
     return this.service.create(req.user.id, dto)
   }
 
-  @Roles(UserRole.EDITOR, UserRole.ADMIN)
+  @Permissions('content:edit')
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -51,7 +50,7 @@ export class ContentsController {
     return this.service.update(id, dto, req.user.id, req.user.role)
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('content:delete')
   @Delete(':id')
   archive(@Param('id') id: string) {
     return this.service.archive(id)

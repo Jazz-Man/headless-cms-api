@@ -7,10 +7,9 @@ import {
   Patch,
   Post,
 } from '@nestjs/common'
+import { Permissions } from '../../common/decorators/permissions.decorator'
 import { Public } from '../../common/decorators/public.decorator'
-import { Roles } from '../../common/decorators/roles.decorator'
 import { Taxonomy } from '../../entities/taxonomy.entity'
-import { UserRole } from '../../entities/user.entity'
 import { TaxonomiesService } from '../taxonomies.service'
 import { CreateTermDto } from './dto/create-term.dto'
 import { UpdateTermDto } from './dto/update-term.dto'
@@ -47,7 +46,7 @@ export class TermsController {
     return this.termsService.findOne(taxonomy.id, slug)
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('terms:manage')
   @Post()
   async create(
     @Param('taxonomySlug') taxonomySlug: string,
@@ -57,7 +56,7 @@ export class TermsController {
     return this.termsService.create(taxonomy.id, dto)
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('terms:manage')
   @Patch(':slug')
   async update(
     @Param('taxonomySlug') taxonomySlug: string,
@@ -68,7 +67,7 @@ export class TermsController {
     return this.termsService.update(taxonomy.id, slug, dto)
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('terms:manage')
   @Delete(':slug')
   async remove(
     @Param('taxonomySlug') taxonomySlug: string,

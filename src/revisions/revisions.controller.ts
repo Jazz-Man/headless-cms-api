@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Post, Query, Req } from '@nestjs/common'
+import { Permissions } from '../common/decorators/permissions.decorator'
 import { RevisionsService } from './revisions.service'
 
 @Controller('contents')
@@ -26,6 +27,7 @@ export class RevisionsController {
     return this.service.findOne(contentId, parseInt(revisionNumber, 10))
   }
 
+  @Permissions('revisions:restore')
   @Post(':contentId/revisions/:revisionNumber/restore')
   restore(
     @Param('contentId') contentId: string,

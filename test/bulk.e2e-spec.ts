@@ -9,7 +9,8 @@ import { AppModule } from '../src/app.module'
 import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter'
 import { ContentType } from '../src/entities/content-type.entity'
 import { Taxonomy, TaxonomyType } from '../src/entities/taxonomy.entity'
-import { User, UserRole } from '../src/entities/user.entity'
+import { User } from '../src/entities/user.entity'
+import { seedPermissions } from './helpers/seed-permissions'
 
 process.env.DB_DATABASE = 'headless_cms_test'
 
@@ -77,20 +78,22 @@ describe('Bulk Operations (e2e)', () => {
   })
 
   async function seedDatabase() {
+    await seedPermissions(dataSource)
+
     await userRepo.save([
       userRepo.create({
         displayName: 'Bulk Admin',
         email: adminEmail,
         isActive: true,
         passwordHash: await bcrypt.hash(password, 10),
-        role: UserRole.ADMIN,
+        role: 'admin',
       }),
       userRepo.create({
         displayName: 'Bulk Editor',
         email: editorEmail,
         isActive: true,
         passwordHash: await bcrypt.hash(password, 10),
-        role: UserRole.EDITOR,
+        role: 'editor',
       }),
     ])
 
@@ -369,14 +372,16 @@ describe('Bulk Operations (e2e)', () => {
         .expect(401)
     })
 
-    it('editor cannot bulk create terms (admin only)', async () => {
-      await request(app.getHttpServer())
+    it('editor can bulk create terms (has terms:manage)', async () => {
+      const res = await request(app.getHttpServer())
         .post('/api/taxonomies/post_tag/terms/bulk')
         .set('Authorization', `Bearer ${editorToken}`)
         .send({
-          items: [{ name: 'Blocked', slug: 'blocked' }],
+          items: [{ name: 'Editor Bulk Term', slug: 'editor-bulk-term' }],
         })
-        .expect(403)
+        .expect(201)
+
+      expect(res.body.succeeded).toBe(1)
     })
 
     it('editor can bulk create/update contents', async () => {

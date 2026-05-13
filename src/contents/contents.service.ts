@@ -13,7 +13,6 @@ import { Content, ContentStatus } from '../entities/content.entity'
 import { ContentTerm } from '../entities/content-term.entity'
 import { SeoEntityType } from '../entities/seo-meta.entity'
 import { Term } from '../entities/term.entity'
-import { UserRole } from '../entities/user.entity'
 import { RevisionsService } from '../revisions/revisions.service'
 import { SeoService } from '../seo/seo.service'
 import { WebhooksService } from '../webhooks/webhooks.service'
@@ -163,11 +162,11 @@ export class ContentsService {
     id: string,
     dto: UpdateContentDto,
     userId: string,
-    userRole: UserRole,
+    userRole: string,
   ): Promise<Content> {
     const content = await this.findOneById(id)
 
-    if (userRole !== UserRole.ADMIN && content.authorId !== userId) {
+    if (userRole !== 'admin' && content.authorId !== userId) {
       throw new ForbiddenException('You can only edit your own content')
     }
 

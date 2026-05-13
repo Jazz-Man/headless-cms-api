@@ -8,8 +8,7 @@ import {
   Post,
   Req,
 } from '@nestjs/common'
-import { Roles } from '../common/decorators/roles.decorator'
-import { UserRole } from '../entities/user.entity'
+import { Permissions } from '../common/decorators/permissions.decorator'
 import { CreateWebhookDto } from './dto/create-webhook.dto'
 import { UpdateWebhookDto } from './dto/update-webhook.dto'
 import { WebhooksService } from './webhooks.service'
@@ -18,26 +17,26 @@ import { WebhooksService } from './webhooks.service'
 export class WebhooksController {
   constructor(private readonly service: WebhooksService) {}
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('webhooks:manage')
   @Get()
   findAll() {
     return this.service.findAll()
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('webhooks:manage')
   @Post()
   // biome-ignore lint/suspicious/noExplicitAny: req.user injected by guard
   create(@Req() req: any, @Body() dto: CreateWebhookDto) {
     return this.service.create(req.user.id, dto)
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('webhooks:manage')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateWebhookDto) {
     return this.service.update(id, dto)
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('webhooks:manage')
   @Delete(':id')
   async remove(@Param('id') id: string) {
     await this.service.remove(id)

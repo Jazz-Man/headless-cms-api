@@ -8,7 +8,7 @@ import { AuthModule } from './auth/auth.module'
 import { BulkModule } from './bulk/bulk.module'
 import { CacheModule } from './cache/cache.module'
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
-import { RolesGuard } from './common/guards/roles.guard'
+import { PermissionsGuard } from './common/guards/permissions.guard'
 import { databaseConfig } from './config/database.config'
 import { ContentTypesModule } from './content-types/content-types.module'
 import { ContentsModule } from './contents/contents.module'
@@ -16,6 +16,7 @@ import { HealthModule } from './health/health.module'
 import { MediaModule } from './media/media.module'
 import { MenusModule } from './menus/menus.module'
 import { RevisionsModule } from './revisions/revisions.module'
+import { RolesModule } from './roles/roles.module'
 import { SeoModule } from './seo/seo.module'
 import { SitemapModule } from './sitemap/sitemap.module'
 import { TaxonomiesModule } from './taxonomies/taxonomies.module'
@@ -51,6 +52,7 @@ import { WebhooksModule } from './webhooks/webhooks.module'
     TaxonomiesModule,
     MediaModule,
     MenusModule,
+    RolesModule,
     SeoModule,
     SitemapModule,
     ContentsModule,
@@ -60,7 +62,7 @@ import { WebhooksModule } from './webhooks/webhooks.module'
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
-    { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: PermissionsGuard },
   ],
 })
 export class AppModule {}

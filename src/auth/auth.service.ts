@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt'
 import { Repository } from 'typeorm'
 import { RefreshToken } from '../entities/refresh-token.entity'
 import { User } from '../entities/user.entity'
+import { RolesService } from '../roles/roles.service'
 
 @Injectable()
 export class AuthService {
@@ -16,6 +17,7 @@ export class AuthService {
     private readonly refreshTokenRepo: Repository<RefreshToken>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly rolesService: RolesService,
   ) {}
 
   async login(dto: { email: string; password: string }) {
@@ -99,7 +101,15 @@ export class AuthService {
   }
 
   private async generateTokens(user: User) {
-    const payload = { email: user.email, role: user.role, sub: user.id }
+    const permissions = await this.rolesService.getPermissionNamesForRole(
+      user.role,
+    )
+    const payload = {
+      email: user.email,
+      permissions,
+      role: user.role,
+      sub: user.id,
+    }
 
     const accessToken = this.jwtService.sign(payload)
 

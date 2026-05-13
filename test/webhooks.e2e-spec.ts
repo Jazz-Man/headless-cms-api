@@ -9,9 +9,10 @@ import { DataSource, Repository } from 'typeorm'
 import { AppModule } from '../src/app.module'
 import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter'
 import { ContentType } from '../src/entities/content-type.entity'
-import { User, UserRole } from '../src/entities/user.entity'
+import { User } from '../src/entities/user.entity'
 import { Webhook } from '../src/entities/webhook.entity'
 import { WebhooksService } from '../src/webhooks/webhooks.service'
+import { seedPermissions } from './helpers/seed-permissions'
 
 process.env.DB_DATABASE = 'headless_cms_test'
 
@@ -79,20 +80,22 @@ describe('Webhooks (e2e)', () => {
   })
 
   async function seedDatabase() {
+    await seedPermissions(dataSource)
+
     await userRepo.save([
       userRepo.create({
         displayName: 'WH Admin',
         email: adminEmail,
         isActive: true,
         passwordHash: await bcrypt.hash(password, 10),
-        role: UserRole.ADMIN,
+        role: 'admin',
       }),
       userRepo.create({
         displayName: 'WH Editor',
         email: editorEmail,
         isActive: true,
         passwordHash: await bcrypt.hash(password, 10),
-        role: UserRole.EDITOR,
+        role: 'editor',
       }),
     ])
 

@@ -2,15 +2,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm'
-
-export enum UserRole {
-  ADMIN = 'admin',
-  EDITOR = 'editor',
-  VIEWER = 'viewer',
-}
+import { Role } from './role.entity'
 
 @Entity('users')
 export class User {
@@ -26,8 +23,12 @@ export class User {
   @Column({ name: 'display_name', nullable: true })
   displayName: string
 
-  @Column({ default: UserRole.VIEWER, enum: UserRole, type: 'enum' })
-  role: UserRole
+  @Column({ default: 'viewer', length: 50 })
+  role: string
+
+  @ManyToOne(() => Role)
+  @JoinColumn({ name: 'role', referencedColumnName: 'name' })
+  roleEntity: Role
 
   @Column({ default: true, name: 'is_active' })
   isActive: boolean

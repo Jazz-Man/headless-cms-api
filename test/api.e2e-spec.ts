@@ -13,7 +13,8 @@ import { Menu } from '../src/entities/menu.entity'
 import { MenuItem } from '../src/entities/menu-item.entity'
 import { Taxonomy, TaxonomyType } from '../src/entities/taxonomy.entity'
 import { Term } from '../src/entities/term.entity'
-import { User, UserRole } from '../src/entities/user.entity'
+import { User } from '../src/entities/user.entity'
+import { seedPermissions } from './helpers/seed-permissions'
 
 // Override DB_DATABASE only so the app uses the test
 // database. JWT vars are left to .env defaults so that
@@ -87,20 +88,22 @@ describe('API (e2e)', () => {
   })
 
   async function seedDatabase() {
+    await seedPermissions(dataSource)
+
     await userRepo.save([
       userRepo.create({
         displayName: 'Test Admin',
         email: adminEmail,
         isActive: true,
         passwordHash: await bcrypt.hash(password, 10),
-        role: UserRole.ADMIN,
+        role: 'admin',
       }),
       userRepo.create({
         displayName: 'Test Editor',
         email: editorEmail,
         isActive: true,
         passwordHash: await bcrypt.hash(password, 10),
-        role: UserRole.EDITOR,
+        role: 'editor',
       }),
     ])
 
@@ -169,7 +172,7 @@ describe('API (e2e)', () => {
       expect(res.body.accessToken).toBeDefined()
       expect(res.body.user).toBeDefined()
       expect(res.body.user.email).toBe(adminEmail)
-      expect(res.body.user.role).toBe(UserRole.ADMIN)
+      expect(res.body.user.role).toBe('admin')
 
       adminToken = res.body.accessToken
 
@@ -214,7 +217,7 @@ describe('API (e2e)', () => {
         .expect(200)
 
       expect(res.body.email).toBe(adminEmail)
-      expect(res.body.role).toBe(UserRole.ADMIN)
+      expect(res.body.role).toBe('admin')
       expect(res.body.id).toBeDefined()
       expect(res.body.isActive).toBe(true)
     })
@@ -456,17 +459,19 @@ describe('API (e2e)', () => {
       expect(res.body.status).toBe('archived')
     })
 
-    it('DELETE :id — reject editor (non-admin)', async () => {
+    it('DELETE :id — editor can delete (has content:delete)', async () => {
       const createRes = await request(app.getHttpServer())
         .post('/api/contents')
         .set('Authorization', `Bearer ${editorToken}`)
         .send({ title: 'Editor Deletion Test', typeSlug: 'post' })
         .expect(201)
 
-      await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .delete(`/api/contents/${createRes.body.id}`)
         .set('Authorization', `Bearer ${editorToken}`)
-        .expect(403)
+        .expect(200)
+
+      expect(res.body.status).toBe('archived')
     })
   })
 
@@ -726,20 +731,24 @@ describe('API (e2e)', () => {
         .expect(403)
     })
 
-    it('editor cannot create taxonomies', async () => {
-      await request(app.getHttpServer())
+    it('editor can create taxonomies (has terms:manage)', async () => {
+      const res = await request(app.getHttpServer())
         .post('/api/taxonomies')
         .set('Authorization', `Bearer ${editorToken}`)
-        .send({ name: 'Blocked', slug: 'blocked', type: 'flat' })
-        .expect(403)
+        .send({ name: 'Editor Section', slug: 'editor-section', type: 'flat' })
+        .expect(201)
+
+      expect(res.body.slug).toBe('editor-section')
     })
 
-    it('editor cannot create terms', async () => {
-      await request(app.getHttpServer())
+    it('editor can create terms (has terms:manage)', async () => {
+      const res = await request(app.getHttpServer())
         .post('/api/taxonomies/category/terms')
         .set('Authorization', `Bearer ${editorToken}`)
-        .send({ name: 'Blocked', slug: 'blocked' })
-        .expect(403)
+        .send({ name: 'Editor Term', slug: 'editor-term' })
+        .expect(201)
+
+      expect(res.body.slug).toBe('editor-term')
     })
 
     it('editor cannot create menus', async () => {

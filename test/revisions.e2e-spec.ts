@@ -1,3 +1,4 @@
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager'
 import { INestApplication, Logger, ValidationPipe } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import * as bcrypt from 'bcrypt'
@@ -8,7 +9,8 @@ import { AppModule } from '../src/app.module'
 import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter'
 import { Content } from '../src/entities/content.entity'
 import { ContentType } from '../src/entities/content-type.entity'
-import { User, UserRole } from '../src/entities/user.entity'
+import { User } from '../src/entities/user.entity'
+import { seedPermissions } from './helpers/seed-permissions'
 
 process.env.DB_DATABASE = 'headless_cms_test'
 
@@ -51,6 +53,14 @@ describe('Revisions (e2e)', () => {
     await dataSource.dropDatabase()
     await dataSource.synchronize()
 
+    // Flush stale cache entries from previous test runs
+    const cache = app.get<Cache>(CACHE_MANAGER)
+    try {
+      await cache.clear()
+    } catch {
+      // Clear may not be supported by all stores
+    }
+
     userRepo = dataSource.getRepository(User)
     ctRepo = dataSource.getRepository(ContentType)
 
@@ -80,20 +90,22 @@ describe('Revisions (e2e)', () => {
   })
 
   async function seedDatabase() {
+    await seedPermissions(dataSource)
+
     await userRepo.save([
       userRepo.create({
         displayName: 'Rev Admin',
         email: adminEmail,
         isActive: true,
         passwordHash: await bcrypt.hash(password, 10),
-        role: UserRole.ADMIN,
+        role: 'admin',
       }),
       userRepo.create({
         displayName: 'Rev Editor',
         email: editorEmail,
         isActive: true,
         passwordHash: await bcrypt.hash(password, 10),
-        role: UserRole.EDITOR,
+        role: 'editor',
       }),
     ])
 

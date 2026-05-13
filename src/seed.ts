@@ -1,6 +1,35 @@
 import * as bcrypt from 'bcrypt'
 import { DataSource } from 'typeorm'
 
+const ALL_PERMISSIONS = [
+  'content:create',
+  'content:edit',
+  'content:delete',
+  'content:publish',
+  'content-types:manage',
+  'terms:manage',
+  'menus:manage',
+  'media:upload',
+  'media:delete',
+  'seo:manage',
+  'webhooks:manage',
+  'bulk:operate',
+  'revisions:restore',
+  'roles:manage',
+]
+
+const EDITOR_PERMISSIONS = [
+  'content:create',
+  'content:edit',
+  'content:delete',
+  'content:publish',
+  'terms:manage',
+  'media:upload',
+  'seo:manage',
+  'bulk:operate',
+  'revisions:restore',
+]
+
 async function seed() {
   const dataSource = new DataSource({
     database: process.env.DB_DATABASE ?? 'headless_cms',
@@ -19,6 +48,68 @@ async function seed() {
   const userRepo = dataSource.getRepository('users')
   const ctRepo = dataSource.getRepository('content_types')
   const taxRepo = dataSource.getRepository('taxonomies')
+  const permRepo = dataSource.getRepository('permissions')
+  const roleRepo = dataSource.getRepository('roles')
+
+  // Seed permissions
+  const permissions: Record<string, string> = {}
+  for (const name of ALL_PERMISSIONS) {
+    let perm = await permRepo.findOne({ where: { name } })
+    if (!perm) {
+      perm = await permRepo.save(
+        permRepo.create({ description: `${name} permission`, name }),
+      )
+    }
+    permissions[name] = perm.id
+  }
+
+  // Seed admin role with ALL permissions
+  let adminRole = await roleRepo.findOne({
+    where: { name: 'admin' },
+  })
+  if (!adminRole) {
+    adminRole = await roleRepo.save(
+      roleRepo.create({ isBuiltin: true, name: 'admin' }),
+    )
+  }
+  // Clear and re-assign all permissions
+  await dataSource.query(`DELETE FROM role_permissions WHERE role_id = $1`, [
+    adminRole.id,
+  ])
+  for (const permId of Object.values(permissions)) {
+    await dataSource.query(
+      `INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [adminRole.id, permId],
+    )
+  }
+
+  // Seed editor role
+  let editorRole = await roleRepo.findOne({
+    where: { name: 'editor' },
+  })
+  if (!editorRole) {
+    editorRole = await roleRepo.save(
+      roleRepo.create({ isBuiltin: true, name: 'editor' }),
+    )
+  }
+  await dataSource.query(`DELETE FROM role_permissions WHERE role_id = $1`, [
+    editorRole.id,
+  ])
+  for (const name of EDITOR_PERMISSIONS) {
+    const permId = permissions[name]
+    if (permId) {
+      await dataSource.query(
+        `INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [editorRole.id, permId],
+      )
+    }
+  }
+
+  // Seed viewer role (no permissions)
+  const viewerExists = await roleRepo.findOne({ where: { name: 'viewer' } })
+  if (!viewerExists) {
+    await roleRepo.save(roleRepo.create({ isBuiltin: true, name: 'viewer' }))
+  }
 
   // Admin user
   const adminExists = await userRepo.findOne({

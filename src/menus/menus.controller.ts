@@ -7,9 +7,8 @@ import {
   Patch,
   Post,
 } from '@nestjs/common'
+import { Permissions } from '../common/decorators/permissions.decorator'
 import { Public } from '../common/decorators/public.decorator'
-import { Roles } from '../common/decorators/roles.decorator'
-import { UserRole } from '../entities/user.entity'
 import { CreateMenuDto } from './dto/create-menu.dto'
 import { UpdateMenuDto } from './dto/update-menu.dto'
 import { MenusService } from './menus.service'
@@ -30,19 +29,19 @@ export class MenusController {
     return this.service.getMenuTree(slug)
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('menus:manage')
   @Post()
   create(@Body() dto: CreateMenuDto) {
     return this.service.create(dto)
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('menus:manage')
   @Patch(':slug')
   update(@Param('slug') slug: string, @Body() dto: UpdateMenuDto) {
     return this.service.update(slug, dto)
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('menus:manage')
   @Delete(':slug')
   remove(@Param('slug') slug: string) {
     return this.service.remove(slug)

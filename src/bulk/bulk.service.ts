@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common'
 import { ContentsService } from '../contents/contents.service'
-import { UserRole } from '../entities/user.entity'
 import { TaxonomiesService } from '../taxonomies/taxonomies.service'
 import { TermsService } from '../taxonomies/terms/terms.service'
 import {
@@ -35,7 +34,7 @@ export class BulkService {
 
   async bulkContents(
     authorId: string,
-    authorRole: UserRole,
+    authorRole: string,
     dto: BulkContentsDto,
   ): Promise<BulkResult> {
     switch (dto.action) {
@@ -91,7 +90,7 @@ export class BulkService {
 
   private async bulkUpdateContents(
     userId: string,
-    userRole: UserRole,
+    userRole: string,
     items: BulkUpdateItemDto[],
   ): Promise<BulkResult> {
     const results: BulkResultItem[] = []

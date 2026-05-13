@@ -7,9 +7,8 @@ import {
   Patch,
   Post,
 } from '@nestjs/common'
+import { Permissions } from '../common/decorators/permissions.decorator'
 import { Public } from '../common/decorators/public.decorator'
-import { Roles } from '../common/decorators/roles.decorator'
-import { UserRole } from '../entities/user.entity'
 import { CreateTaxonomyDto } from './dto/create-taxonomy.dto'
 import { UpdateTaxonomyDto } from './dto/update-taxonomy.dto'
 import { TaxonomiesService } from './taxonomies.service'
@@ -24,19 +23,19 @@ export class TaxonomiesController {
     return this.service.findAll()
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('terms:manage')
   @Post()
   create(@Body() dto: CreateTaxonomyDto) {
     return this.service.create(dto)
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('terms:manage')
   @Patch(':slug')
   update(@Param('slug') slug: string, @Body() dto: UpdateTaxonomyDto) {
     return this.service.update(slug, dto)
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions('terms:manage')
   @Delete(':slug')
   remove(@Param('slug') slug: string) {
     return this.service.remove(slug)

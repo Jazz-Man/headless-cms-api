@@ -7,14 +7,13 @@ import {
   Patch,
   Post,
 } from '@nestjs/common'
-import { Roles } from '../common/decorators/roles.decorator'
-import { UserRole } from '../entities/user.entity'
+import { Permissions } from '../common/decorators/permissions.decorator'
 import { ContentTypesService } from './content-types.service'
 import { CreateContentTypeDto } from './dto/create-content-type.dto'
 import { UpdateContentTypeDto } from './dto/update-content-type.dto'
 
 @Controller('content-types')
-@Roles(UserRole.ADMIN)
+@Permissions('content-types:manage')
 export class ContentTypesController {
   constructor(private readonly service: ContentTypesService) {}
 
