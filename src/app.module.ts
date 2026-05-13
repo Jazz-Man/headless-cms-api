@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { LoggerModule } from 'nestjs-pino'
 import { AuthModule } from './auth/auth.module'
+import { BulkModule } from './bulk/bulk.module'
 import { CacheModule } from './cache/cache.module'
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
 import { RolesGuard } from './common/guards/roles.guard'
@@ -14,8 +15,11 @@ import { ContentsModule } from './contents/contents.module'
 import { HealthModule } from './health/health.module'
 import { MediaModule } from './media/media.module'
 import { MenusModule } from './menus/menus.module'
+import { RevisionsModule } from './revisions/revisions.module'
 import { SeoModule } from './seo/seo.module'
+import { SitemapModule } from './sitemap/sitemap.module'
 import { TaxonomiesModule } from './taxonomies/taxonomies.module'
+import { WebhooksModule } from './webhooks/webhooks.module'
 
 @Module({
   imports: [
@@ -41,13 +45,17 @@ import { TaxonomiesModule } from './taxonomies/taxonomies.module'
       useFactory: databaseConfig,
     }),
     AuthModule,
+    BulkModule,
     ContentTypesModule,
     HealthModule,
     TaxonomiesModule,
     MediaModule,
     MenusModule,
     SeoModule,
+    SitemapModule,
     ContentsModule,
+    RevisionsModule,
+    WebhooksModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

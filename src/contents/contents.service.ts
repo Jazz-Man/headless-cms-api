@@ -1,6 +1,7 @@
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager'
 import {
   ForbiddenException,
+  forwardRef,
   Inject,
   Injectable,
   NotFoundException,
@@ -13,7 +14,9 @@ import { ContentTerm } from '../entities/content-term.entity'
 import { SeoEntityType } from '../entities/seo-meta.entity'
 import { Term } from '../entities/term.entity'
 import { UserRole } from '../entities/user.entity'
+import { RevisionsService } from '../revisions/revisions.service'
 import { SeoService } from '../seo/seo.service'
+import { WebhooksService } from '../webhooks/webhooks.service'
 import { CreateContentDto } from './dto/create-content.dto'
 import { QueryContentsDto } from './dto/query-contents.dto'
 import { UpdateContentDto } from './dto/update-content.dto'
@@ -28,6 +31,10 @@ export class ContentsService {
     private readonly seoService: SeoService,
     private readonly contentTypesService: ContentTypesService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    @Inject(forwardRef(() => WebhooksService))
+    private readonly webhooksService: WebhooksService,
+    @Inject(forwardRef(() => RevisionsService))
+    private readonly revisionsService: RevisionsService,
   ) {}
 
   async create(authorId: string, dto: CreateContentDto): Promise<Content> {
@@ -55,7 +62,23 @@ export class ContentsService {
 
     await this.invalidateContentListCache(dto.typeSlug)
     await this.invalidateContentListCache()
-    return this.findOneById(saved.id)
+    const result = await this.findOneById(saved.id)
+
+    // Fire webhook asynchronously — don't await
+    this.webhooksService
+      .fireEvent('content.created', {
+        contentId: result.id,
+        slug: result.slug,
+        status: result.status,
+        title: result.title,
+        typeSlug: dto.typeSlug,
+      })
+      .catch(() => {
+        // Intentionally swallowed — webhook failures must not block
+        // the content operation
+      })
+
+    return result
   }
 
   async findPublished(query: QueryContentsDto) {
@@ -148,6 +171,9 @@ export class ContentsService {
       throw new ForbiddenException('You can only edit your own content')
     }
 
+    // Create a revision snapshot before applying the update
+    await this.revisionsService.createRevision(id, userId)
+
     const wasDraft = content.status !== ContentStatus.PUBLISHED
     if (dto.title !== undefined) content.title = dto.title
     if (dto.slug !== undefined) content.slug = dto.slug
@@ -178,7 +204,26 @@ export class ContentsService {
       await this.cacheManager.del(`contents:slug:${dto.slug}`)
     }
     await this.invalidateContentListCache()
-    return this.findOneById(id)
+    const result = await this.findOneById(id)
+
+    // Fire webhook asynchronously — don't await
+    const event =
+      dto.status === ContentStatus.PUBLISHED && wasDraft
+        ? 'content.published'
+        : 'content.updated'
+    this.webhooksService
+      .fireEvent(event, {
+        contentId: result.id,
+        slug: result.slug,
+        status: result.status,
+        title: result.title,
+      })
+      .catch(() => {
+        // Intentionally swallowed — webhook failures must not block
+        // the content operation
+      })
+
+    return result
   }
 
   async archive(id: string): Promise<Content> {
@@ -190,6 +235,19 @@ export class ContentsService {
     const saved = await this.contentRepo.save(content)
     await this.cacheManager.del(`contents:slug:${content.slug}`)
     await this.invalidateContentListCache()
+
+    // Fire webhook asynchronously — don't await
+    this.webhooksService
+      .fireEvent('content.deleted', {
+        contentId: saved.id,
+        slug: saved.slug,
+        title: saved.title,
+      })
+      .catch(() => {
+        // Intentionally swallowed — webhook failures must not block
+        // the content operation
+      })
+
     return saved
   }
 

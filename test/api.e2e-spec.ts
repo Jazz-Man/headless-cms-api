@@ -11,7 +11,7 @@ import { Content } from '../src/entities/content.entity'
 import { ContentType } from '../src/entities/content-type.entity'
 import { Menu } from '../src/entities/menu.entity'
 import { MenuItem } from '../src/entities/menu-item.entity'
-import { Taxonomy } from '../src/entities/taxonomy.entity'
+import { Taxonomy, TaxonomyType } from '../src/entities/taxonomy.entity'
 import { Term } from '../src/entities/term.entity'
 import { User, UserRole } from '../src/entities/user.entity'
 
@@ -124,13 +124,13 @@ describe('API (e2e)', () => {
         isBuiltin: true,
         name: 'Categories',
         slug: 'category',
-        type: 'hierarchical',
+        type: TaxonomyType.HIERARCHICAL,
       }),
       taxRepo.create({
         isBuiltin: true,
         name: 'Tags',
         slug: 'post_tag',
-        type: 'flat',
+        type: TaxonomyType.FLAT,
       }),
     ])
   }
@@ -144,8 +144,8 @@ describe('API (e2e)', () => {
       .send({ email, password: pw })
       .expect(201)
 
-    const cookies = res.headers['set-cookie'] as string[]
-    const rawCookie = cookies?.find((c) => c.startsWith('refresh_token=')) ?? ''
+    const cookies = (res.headers['set-cookie'] ?? []) as unknown as string[]
+    const rawCookie = cookies.find((c) => c.startsWith('refresh_token=')) ?? ''
     // Extract just "refresh_token=eyJ..." without the Set-Cookie
     // attributes (Path, HttpOnly, etc.) so it works with
     // supertest's set('Cookie', ...).
@@ -249,8 +249,8 @@ describe('API (e2e)', () => {
         .set('Cookie', refreshCookie)
         .expect(204)
 
-      const cookies = res.headers['set-cookie'] as string[]
-      const cleared = cookies?.find(
+      const cookies = (res.headers['set-cookie'] ?? []) as unknown as string[]
+      const cleared = cookies.find(
         (c) => c.startsWith('refresh_token=') && c.includes('Expires='),
       )
       expect(cleared).toBeDefined()
